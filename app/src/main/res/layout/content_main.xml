@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context=".MainActivity"
+    tools:showIn="@layout/activity_main">
+
+
+    <TextView
+        android:id="@+id/tituloView"
+        android:layout_width="257dp"
+        android:layout_height="43dp"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="28dp"
+        android:longClickable="true"
+        android:text="Collar Inteligente"
+        android:textAlignment="center"
+        android:textSize="24dp" />
+
+    <ImageView
+        android:id="@+id/imagenPerro"
+        android:layout_width="match_parent"
+        android:layout_height="130dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="94dp"
+        android:src="@drawable/icono" />
+
+    <TextView
+        android:id="@+id/tempView"
+        android:layout_width="177dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_centerVertical="true"
+        android:fontFamily="cursive"
+        android:text="Temperatura"
+        android:textAppearance="@style/TextAppearance.AppCompat"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/estadoPuertaView"
+        android:layout_width="173dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginBottom="187dp"
+        android:fontFamily="cursive"
+        android:text="Estado Puerta"
+        android:textAppearance="@style/TextAppearance.AppCompat"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+
+    <Button
+        android:id="@+id/puertaButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignStart="@+id/lucesButton"
+        android:layout_marginBottom="14dp"
+        android:text="Abrir Puerta" />
+
+    <Button
+        android:id="@+id/lucesButton"
+        android:layout_width="134dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignTop="@+id/conectarButton"
+        android:layout_marginStart="13dp"
+        android:text="Prender Luces" />
+
+    <Button
+        android:id="@+id/conectarButton"
+        android:layout_width="127dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginBottom="73dp"
+        android:layout_marginEnd="15dp"
+        android:text="Conectar" />
+
+    <Button
+        android:id="@+id/desconectarButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_below="@+id/conectarButton"
+        android:layout_marginEnd="22dp"
+        android:layout_marginTop="-56dp"
+        android:text="Desconectar" />
+
+    <TextView
+        android:id="@+id/tempVar"
+        android:layout_width="126dp"
+        android:layout_height="34dp"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:layout_marginEnd="32dp" />
+
+    <TextView
+        android:id="@+id/estadoPuertaVar"
+        android:layout_width="126dp"
+        android:layout_height="34dp"
+        android:layout_alignBottom="@+id/estadoPuertaView"
+        android:layout_alignStart="@+id/tempVar"
+        android:layout_marginStart="1dp"
+        android:text="" />
+
+
+</RelativeLayout>
