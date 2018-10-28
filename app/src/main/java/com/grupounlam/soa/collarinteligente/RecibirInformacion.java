@@ -1,52 +1,68 @@
 package com.grupounlam.soa.collarinteligente;
 
-import android.bluetooth.BluetoothSocket;
-import android.content.Context;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 
 import java.io.IOException;
 
 public class RecibirInformacion extends Thread {
-    String cadenita;
-    DispositivosBT blue;
-    boolean ejecutar;
+
+    private DispositivosBT bt;
+    private boolean ejecutar;
+    private Handler mHandler;
 
 
-    /**
-     * Constructor
-     *
-     * @param bt
-     */
-    public RecibirInformacion(DispositivosBT bt) {
-        blue = bt;
-        ejecutar = true;
-    }
 
-    /**
-     * @param ejecutar
-     */
-    public void setEjecutar(boolean ejecutar) {
+    public RecibirInformacion(DispositivosBT blue, Handler miHandler) {
+        this.bt = blue;
 
-        this.ejecutar = ejecutar;
-    }
+        mHandler = miHandler;
 
-    public boolean getEjecutar() {
-        return this.ejecutar;
     }
 
     @Override
     public void run() {
-        while (ejecutar) {
-            if (!blue.isConnected()) {
-                blue.conectar();
-            }
-            cadenita = blue.recibir();
 
-            if (cadenita != null) {
-                Log.d("CADENA RECIBIDA:", cadenita);
+        ejecutar = true;
+        while(ejecutar){
+            Message mensaje = new Message();
+            mensaje.setTarget(mHandler);
+            Bundle info = new Bundle();
+            String cadena = bt.recibir();
+            String valores[] = new String[3];
+            if(cadena != null)
+            {
+                valores = cadena.split(",");
+                Log.d("CADENA ",cadena);
+                if(valores.length == 2){
+                    info.putString("puerta",valores[0]);
+                    info.putString("temp",valores[1]);
+                }else{
+                    info.putString("puerta", "SIN DATO");
+                    info.putString("temp","SIN DATO");
+                }
 
+
+                mensaje.setData(info);
+                mensaje.sendToTarget();
             }
+
         }
     }
+
+    public void comenzarARecibir(){
+        ejecutar = true;
+        this.start();
+
+    }
+
+    public  void pararRecibir(){
+       ejecutar = false;
+    }
+
+
+
 
 }

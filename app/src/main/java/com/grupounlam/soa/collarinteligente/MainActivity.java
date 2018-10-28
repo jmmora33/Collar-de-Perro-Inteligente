@@ -1,5 +1,6 @@
 package com.grupounlam.soa.collarinteligente;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
 import android.hardware.Sensor;
@@ -7,17 +8,22 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -35,13 +41,14 @@ public class MainActivity extends AppCompatActivity {
     private TextView temperatura;
     private TextView tempVar;
     private  TextView puertaVar;
-    public static String TEMPVAR;
+    private Toast toast;
     //// BT
     private DispositivosBT bt ;
-    private String cadenita;
+    private RecibirInformacion recibir;
+    private Handler handler;
     /// PARA EL SHAKE
-    private int shake;
-    private RecibirInformacion info;
+    private static final int  SHAKE = 15;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,13 +69,29 @@ public class MainActivity extends AppCompatActivity {
         luces = (Button) findViewById(R.id.lucesButton);
         tempVar = (TextView)findViewById(R.id.tempVar);
         puertaVar = (TextView)findViewById(R.id.estadoPuertaVar);
+        toast = Toast.makeText(getBaseContext(),"",Toast.LENGTH_LONG);
+        toast.setGravity(Gravity.CENTER ,0,0);
         desconectar.setEnabled(false);
         conectar.setEnabled(true);
+        handler = new Handler() {
+            @Override
+            public void handleMessage(Message msg) {
+                Bundle mensaje = msg.getData();
+                Log.d("Mensaje:",mensaje.getString("temp"));
+                puertaVar.setText(mensaje.getString("temp"));
+                tempVar.setText(mensaje.getString("puerta"));
+                removeMessages(0);
+            }
+        };
+
+
+
     }
     // Inicializa las variables de los sensores.
     private void initSensores(){
 
         sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
+
         sensorprox = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
         sensoracel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         sensorTemp = sensorManager.getDefaultSensor(Sensor.TYPE_TEMPERATURE);
@@ -87,12 +110,15 @@ public class MainActivity extends AppCompatActivity {
                                 Toast.makeText(getBaseContext(),"PRECISAS ALGO?",Toast.LENGTH_SHORT).show();
                             break;
                         case Sensor.TYPE_ACCELEROMETER:
-                            acelerometro(event.values[0]);
+                            if(Math.abs(event.values[0]) > SHAKE || Math.abs(event.values[1]) > SHAKE || Math.abs(event.values[2]) > SHAKE)
+                            {
+                                Log.d("Sensor", "Hubo un shake madafaca");
+                                Toast.makeText(getBaseContext(), "Shake it!", Toast.LENGTH_SHORT).show();
+                            }
+
                             break;
 
-                        case Sensor.TYPE_TEMPERATURE:
-                            Log.d("Temperatura:","Valor" + event.values[0]);
-                            break;
+
 
 
                     }
@@ -117,19 +143,23 @@ public class MainActivity extends AppCompatActivity {
                 public void onClick(View v) {
 
                     bt = new DispositivosBT();
-                    Toast.makeText(getBaseContext(),"Conectando....",Toast.LENGTH_SHORT).show();
+
+                    mostrarToast(Toast.LENGTH_LONG,"Conectando...");
                     bt.conectar();
+
                     if(bt.isConnected()){
-                    conectar.setEnabled(false);
-                    desconectar.setEnabled(true);
-                        Toast.makeText(getBaseContext(),"Conexion exitosa",Toast.LENGTH_SHORT).show();
+                        conectar.setEnabled(false);
+                        desconectar.setEnabled(true);
+                        mostrarToast(Toast.LENGTH_LONG,"conexion exitosa!");
+                        recibir = new RecibirInformacion(bt,handler);
+                        recibir.comenzarARecibir();
                         Log.d("BT:", "Conexion exitosa");
                     }else{
-                        Toast.makeText(getBaseContext(),"Fallo Conexion",Toast.LENGTH_SHORT).show();
+                        mostrarToast(Toast.LENGTH_LONG,"Fallo Conexion :(");
                         Log.d("BT:", "Fallo conexion");
 
                     }
-                    recibirBT(true);
+
                 }
             });
         }
@@ -139,20 +169,16 @@ public class MainActivity extends AppCompatActivity {
             luces.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-
+                    
                     if(!bt.isConnected()){
                         bt.cerrarBT();
-                        bt.conectar();
+                        mostrarToast(Toast.LENGTH_SHORT, "Servicio no conectado");
+                        conectar.setEnabled(true);
+                        desconectar.setEnabled(false);
+                    }else {
+                        mostrarToast(Toast.LENGTH_SHORT, "Prendiendo Luz!");
+                        bt.enviar("Luz");
                     }
-                    new Thread(new Runnable() {
-                        public void run() {
-                            bt.enviar("Luz");
-                        }
-                    }).start();
-
-
-                    Toast.makeText(getBaseContext(),"Prendiendo luz!",Toast.LENGTH_LONG).show();
-
                 }
             });
 
@@ -166,15 +192,14 @@ public class MainActivity extends AppCompatActivity {
 
                     if(!bt.isConnected()){
                         bt.cerrarBT();
-                        bt.conectar();
+                        mostrarToast(Toast.LENGTH_LONG, "Servicio no conectado");
+                        conectar.setEnabled(true);
+                        desconectar.setEnabled(false);
+                    }else {
+                        mostrarToast(Toast.LENGTH_LONG, "Abriendo Puerta!");
+                        bt.enviar("Puerta");
                     }
-                    Toast.makeText(getBaseContext(),"Abriendo Puerta!",Toast.LENGTH_LONG).show();
 
-                   new Thread(new Runnable() {
-                        public void run() {
-                            bt.enviar("Puerta");
-                        }
-                    }).start();
 
                 }
             });
@@ -185,41 +210,21 @@ public class MainActivity extends AppCompatActivity {
             desconectar.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    recibirBT(false);
-                    if(bt.isConnected()){
+
+                    if(bt != null && bt.isConnected()){
+                        recibir.pararRecibir();
                         bt.cerrarBT();
                     }
-                    Toast.makeText(getBaseContext(),"Desconectado!",Toast.LENGTH_SHORT).show();
+                    mostrarToast(Toast.LENGTH_LONG,"Desconectado!");
                     conectar.setEnabled(true);
                     desconectar.setEnabled(false);
+                    tempVar.setText("");
+                    puertaVar.setText("");
                 }
             });
         }
 
     }
-
-    private void recibirBT(final boolean iniciar){
-        RecibirInformacion info = new RecibirInformacion(bt);
-        info.start();
-
-      /*  MainActivity.this.runOnUiThread(new Runnable() {
-            public void run() {
-                while (iniciar) {
-                    if (!bt.isConnected()) {
-                        bt.conectar();
-                    }
-                    cadenita = bt.recibir();
-                    if (cadenita != null) {
-                        Log.d("CADENA RECIBIDA:", cadenita);
-                        tempVar.setText(cadenita);
-                    }
-                Log.d("UI thread", "I am the UI thread");
-            }
-        }
-        });
-    */
-    }
-
 
     private void registrarSensores(){
         sensorManager.registerListener(sensorListener,sensorprox,2000*1000);
@@ -229,55 +234,44 @@ public class MainActivity extends AppCompatActivity {
         sensorManager.unregisterListener(sensorListener);
     }
 
-    private void acelerometro(float valor){
-        if(valor <= 5 && shake == 0){
-            shake++;
-            getWindow().getDecorView().setBackgroundColor(Color.BLUE);
-        }else if(valor > 5 && shake == 1){
-            shake++;
-            getWindow().getDecorView().setBackgroundColor(Color.GREEN);
+    private void mostrarToast(int duracion, String text){
 
-        }
-        if(shake == 2){
-            Log.d("Sensor","Hubo un shake madafaca");
-            shake = 0;
-        }
+        toast.setText(text);
+        toast.setDuration(duracion);
+        toast.show();
+    }
 
+    private void verificarEstadoConexion(){
 
     }
     @Override
     protected void onPause() {
         eliminarRegistroSensores();
+        if(bt != null && bt.isConnected()){
+            recibir.pararRecibir();
+        }
+
         super.onPause();
     }
 
     @Override
     protected void onResume() {
         registrarSensores();
-        if(bt != null)
-        recibirBT(true);
+        if(bt != null && bt.isConnected()) {
+           // recibir.comenzarARecibir();
+        }
         super.onResume();
     }
 
+
+    @SuppressLint("MissingSuperCall")
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
+    public void onDestroy() {
+        super.onDestroy();
+        recibir.pararRecibir();
+        bt.cerrarBT();
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
 
-        return super.onOptionsItemSelected(item);
-    }
 }
