@@ -3,17 +3,19 @@ package com.grupounlam.soa.collarinteligente;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.Intent;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.UUID;
 
-public class DispositivosBT  {
+public class DispositivosBT  extends AppCompatActivity {
 
     private static final String TAG = "DispositivosBT";
     private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    private static final String address = "00:21:13:00:83:8C";
+    public static final String ADDRESS = "00:21:13:00:83:8C";
 
     private BluetoothAdapter mBtAdapter = null;
     private BluetoothDevice device = null;
@@ -26,16 +28,19 @@ public class DispositivosBT  {
 
     public void conectar(){
 
+        mBtAdapter = BluetoothAdapter.getDefaultAdapter();
+                if(!mBtAdapter.enable()){
+                    Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                    startActivityForResult(enableIntent,1);
+                }
+
                 if (btSocket == null) {
-
-                    mBtAdapter = BluetoothAdapter.getDefaultAdapter();
-
-                    device = mBtAdapter.getRemoteDevice(address);
+                    device = mBtAdapter.getRemoteDevice(ADDRESS);
 
                     if(device == null){
                         Log.d("DEVICE","No se pudo vincular con el dispositivo");
                     }else {
-                        Log.d("DEVICE", device.toString() + "HC-06");
+                        Log.d("DEVICE", device.toString() + " HC-06");
                         btSocket = crearSocketBT(device);
                         // Establish the Bluetooth btSocket connection.
                         try {
@@ -151,8 +156,9 @@ public class DispositivosBT  {
     private BluetoothSocket crearSocketBT(BluetoothDevice device)
     {
         BluetoothSocket retorno = null;
+        mBtAdapter.cancelDiscovery();
         try {
-            retorno = device.createInsecureRfcommSocketToServiceRecord(BTMODULEUUID);
+            retorno = device.createRfcommSocketToServiceRecord(BTMODULEUUID);
         }catch(IOException e){
             Log.d("Socket","Error en la vinculacion con Arduino.");
         }
