@@ -19,7 +19,7 @@
         android:longClickable="true"
         android:text="@string/app_name"
         android:textColor="#000099"
-        
+
         android:textAlignment="center"
         android:textSize="24dp" />
 
@@ -30,7 +30,7 @@
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
         android:layout_marginTop="90dp"
-        android:src="@drawable/icono" />
+        android:src="@drawable/icono2" />
 
     <TextView
         android:id="@+id/tempView"

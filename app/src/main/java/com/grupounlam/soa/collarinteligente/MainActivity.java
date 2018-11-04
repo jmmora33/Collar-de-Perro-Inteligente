@@ -157,7 +157,7 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
                 @Override
                 public void onClick(View v) {
 
-                    if (!bt.isConnected()) {
+                    if (bt ==null || !bt.isConnected()) {
                         bt.cerrarBT();
                         mostrarToast(Toast.LENGTH_SHORT, "Servicio no conectado");
                         conectar.setEnabled(true);
@@ -177,7 +177,7 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
                 @Override
                 public void onClick(View v) {
 
-                    if (!bt.isConnected()) {
+                    if (bt ==null || !bt.isConnected()) {
                         bt.cerrarBT();
                         mostrarToast(Toast.LENGTH_SHORT, "Servicio no conectado");
                         conectar.setEnabled(true);
