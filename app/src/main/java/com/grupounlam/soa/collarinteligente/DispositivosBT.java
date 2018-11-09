@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
+import android.os.ParcelUuid;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import java.io.IOException;
@@ -17,26 +18,36 @@ public class DispositivosBT  extends AppCompatActivity {
     private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     public static final String ADDRESS = "00:21:13:00:83:8C";
 
-    private BluetoothAdapter mBtAdapter = null;
-    private BluetoothDevice device = null;
-    private BluetoothSocket btSocket = null;
-    private OutputStream mmOutStream = null;
-    private InputStream mmInStream = null;
+    private BluetoothAdapter mBtAdapter ;
+    private BluetoothDevice device ;
+    private BluetoothSocket btSocket;
+    private OutputStream mmOutStream;
+    private InputStream mmInStream;
 
     private boolean iniciar;
     private String cadenita;
+    private ParcelUuid list[];
+    public DispositivosBT(){
+        mBtAdapter = null;
+        device = null;
+        btSocket = null;
+        mmOutStream = null;
+        mmInStream = null;
+    }
 
-    public void conectar(){
+    public  void conectar(){
 
                 mBtAdapter = BluetoothAdapter.getDefaultAdapter();
+
                 if(!mBtAdapter.enable()){
                     Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                     startActivityForResult(enableIntent,1);
+
                 }
 
                 if (btSocket == null) {
                     device = mBtAdapter.getRemoteDevice(ADDRESS);
-
+                     list = device.getUuids();
                     if(device == null){
                         Log.d("DEVICE","No se pudo vincular con el dispositivo");
                     }else {
@@ -156,8 +167,10 @@ public class DispositivosBT  extends AppCompatActivity {
     private BluetoothSocket crearSocketBT(BluetoothDevice device)
     {
         BluetoothSocket retorno = null;
+        int i = 0;
         mBtAdapter.cancelDiscovery();
         try {
+
             retorno = device.createRfcommSocketToServiceRecord(BTMODULEUUID);
         }catch(IOException e){
             Log.d("Socket","Error en la vinculacion con Arduino.");

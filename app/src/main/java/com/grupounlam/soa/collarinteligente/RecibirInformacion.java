@@ -78,7 +78,7 @@ public class RecibirInformacion extends AppCompatActivity{
             public void run() {
                 while(true) {
 
-
+    /*
                         DispositivosBT bt = new DispositivosBT();
                         bt.conectar();
                         if (bt.isConnected()) {
@@ -88,18 +88,34 @@ public class RecibirInformacion extends AppCompatActivity{
                             info.putString("sol", "abrir");
                             mensaje.setData(info);
                             bt.cerrarBT();
-                        }
+                    }
 
                     try {
                         Thread.sleep(5000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
+                     */
                 }
+
                 }
 
         }).start();
     }
 
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+    }
 
 }

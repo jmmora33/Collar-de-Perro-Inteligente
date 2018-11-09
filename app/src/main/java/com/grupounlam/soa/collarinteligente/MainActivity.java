@@ -1,9 +1,6 @@
 package com.grupounlam.soa.collarinteligente;
 
-import android.annotation.SuppressLint;
-import android.content.Context;
 import android.content.DialogInterface;
-import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -20,7 +17,6 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity implements  SensorEventListener {
 
@@ -49,6 +45,7 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
     private static final int SHAKE = 15;
     //DIALOG
     private AlertDialog dialogPuerta;
+
 
     // Inicializa y asocia los campos y botones
     private void initComponentes() {
@@ -109,6 +106,9 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
                                 }
                             }
                             break;
+                        case Sensor.TYPE_LIGHT:
+                            mostrarToast(Toast.LENGTH_SHORT,"Poca Luz!");
+                            break;
                     }
 
 
@@ -135,9 +135,14 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
                 public void onClick(View v) {
                     int i = 0;
                     bt = new DispositivosBT();
-
+                    mostrarToast(Toast.LENGTH_SHORT, "Conectando...");
                     while (i < UMBRAL && !bt.isConnected()){
                         bt.conectar();
+                        try {
+                            Thread.sleep(2000);
+                        } catch(InterruptedException e) {
+                            Log.d("SLEEPING ERROR","LCG");
+                        }
                     if (bt.isConnected()) {
                         conectar.setEnabled(false);
                         desconectar.setEnabled(true);
@@ -147,7 +152,7 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
                         recibir.comenzarARecibir();
                         Log.d("BT:", "Conexion exitosa");
                     } else {
-                        mostrarToast(Toast.LENGTH_SHORT, "Conectando...");
+
                         mostrarToast(Toast.LENGTH_SHORT, "Fallo Conexion :(");
                         Log.d("BT:", "Fallo conexion");
                     }
@@ -239,7 +244,7 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
                 toast.setDuration(duracion);
                 toast.show();
             }
-        },10);
+        },500);
 
     }
 
