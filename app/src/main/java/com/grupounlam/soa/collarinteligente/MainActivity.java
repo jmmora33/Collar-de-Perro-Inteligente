@@ -39,6 +39,7 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
     private Toast toast;
     //// BT
     private DispositivosBT bt;
+    private final int UMBRAL = 5;
     private RecibirInformacion recibir;
     private RecibirInformacion verPuerta;
     private Handler handlerDatos;
@@ -82,7 +83,7 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
             }
         };
         verPuerta = new RecibirInformacion(handlerPuerta);
-        verPuerta.cercaniaCollar(1);
+        verPuerta.cercaniaCollar();
     }
 
 
@@ -128,25 +129,30 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
 
 //// Boton Conectar
         if (conectar != null) {
+
             conectar.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    mostrarToast(Toast.LENGTH_SHORT, "Conectando...");
-
+                    int i = 0;
                     bt = new DispositivosBT();
-                    bt.conectar();
 
+                    while (i < UMBRAL && !bt.isConnected()){
+                        bt.conectar();
                     if (bt.isConnected()) {
                         conectar.setEnabled(false);
                         desconectar.setEnabled(true);
-                        mostrarToast(Toast.LENGTH_LONG, "conexion exitosa!");
-                        recibir = new RecibirInformacion(bt, handlerDatos,false);
+
+                        mostrarToast(Toast.LENGTH_SHORT, "conexion exitosa!");
+                        recibir = new RecibirInformacion(bt, handlerDatos, false);
                         recibir.comenzarARecibir();
                         Log.d("BT:", "Conexion exitosa");
                     } else {
-                        mostrarToast(Toast.LENGTH_LONG, "Fallo Conexion :(");
+                        mostrarToast(Toast.LENGTH_SHORT, "Conectando...");
+                        mostrarToast(Toast.LENGTH_SHORT, "Fallo Conexion :(");
                         Log.d("BT:", "Fallo conexion");
                     }
+                    i++;
+                }
                 }
             });
         }
@@ -223,11 +229,17 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
         sensorManager.unregisterListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY));
     }
 
-    private void mostrarToast(int duracion, String text) {
+    private void mostrarToast(final int duracion, final String text) {
 
-        toast.setText(text);
-        toast.setDuration(duracion);
-        toast.show();
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                toast.setText(text);
+                toast.setDuration(duracion);
+                toast.show();
+            }
+        },10);
 
     }
 

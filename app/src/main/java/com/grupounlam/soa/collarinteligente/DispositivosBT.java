@@ -28,7 +28,7 @@ public class DispositivosBT  extends AppCompatActivity {
 
     public void conectar(){
 
-        mBtAdapter = BluetoothAdapter.getDefaultAdapter();
+                mBtAdapter = BluetoothAdapter.getDefaultAdapter();
                 if(!mBtAdapter.enable()){
                     Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                     startActivityForResult(enableIntent,1);
