@@ -15,7 +15,7 @@ public class RecibirInformacion extends AppCompatActivity{
     private boolean ejecutar;
     private Handler mHandler;
     private boolean registrar;
-    private static final int CANT_INFO = 10;
+    private static final int CANT_INFO = 20;
     private String[] valores;
 
     public RecibirInformacion(DispositivosBT blue, Handler miHandler, boolean registrar) {
