@@ -1,5 +1,6 @@
 package com.grupounlam.soa.collarinteligente;
 
+import android.bluetooth.BluetoothServerSocket;
 import android.content.DialogInterface;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -20,9 +21,18 @@ import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity implements  SensorEventListener {
 
+
+    ////Direccion de dispositivos
+    public static final String DIR_COLLAR = "00:21:13:00:83:8C";
+    public static  boolean IS_CONNECT = false;
+    public static boolean PUERTA_ABIERTA = false;
+    public static boolean LUZ_PRENDIDA = false;
+
     //// Sensores
     private SensorManager sensorManager;
-
+    private static int UMBRAL_LUZ = 10;
+    private static final int SHAKE = 15;
+    private int contador_iluminancia;
 
     //// Layout
     private Button conectar;
@@ -33,18 +43,19 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
     private TextView tempVar;
     private TextView puertaVar;
     private Toast toast;
+
     //// BT
     private DispositivosBT bt;
-    private final int UMBRAL = 5;
+    private final int UMBRAL_CONEXION = 5;
     private RecibirInformacion recibir;
     private RecibirInformacion verPuerta;
     private Handler handlerDatos;
     private Handler handlerPuerta;
     private Handler handlerNews;
     /// PARA EL SHAKE
-    private static final int SHAKE = 15;
+
     //DIALOG
-    private AlertDialog dialogPuerta;
+    private AlertDialog dialog;
 
 
     // Inicializa y asocia los campos y botones
@@ -75,8 +86,8 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
         handlerPuerta = new Handler() {
             @Override
             public void handleMessage(Message msg) {
-                dialogPuerta = mostrarVentanaEmergente("Ingrese Opcion", "Desea abrir la puerta?");
-                dialogPuerta.show();
+                dialog = mostrarVentanaEmergente("Ingrese Opcion", "Desea abrir la puerta?", "puerta");
+                dialog.show();
             }
         };
         verPuerta = new RecibirInformacion(handlerPuerta);
@@ -107,7 +118,14 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
                             }
                             break;
                         case Sensor.TYPE_LIGHT:
-                            mostrarToast(Toast.LENGTH_SHORT,"Poca Luz!");
+                                if(event.values[0] < UMBRAL_LUZ && !LUZ_PRENDIDA)
+                                    contador_iluminancia ++;
+                                if(contador_iluminancia > 10){
+                                    dialog = mostrarVentanaEmergente("Ingrese Opcion", "Desea prender la luz?", "luz");
+                                    dialog.show();
+                                    contador_iluminancia = 0;
+                                    LUZ_PRENDIDA = true;
+                                }
                             break;
                     }
 
@@ -136,8 +154,11 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
                     int i = 0;
                     bt = new DispositivosBT();
                     mostrarToast(Toast.LENGTH_SHORT, "Conectando...");
-                    while (i < UMBRAL && !bt.isConnected()){
-                        bt.conectar();
+
+                    //OPtimizar para quitar esta logica de aca.
+                    while (i < UMBRAL_CONEXION && !bt.isConnected()){
+                        bt.conectar(DIR_COLLAR);
+
                         try {
                             Thread.sleep(2000);
                         } catch(InterruptedException e) {
@@ -169,7 +190,7 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
                 public void onClick(View v) {
 
                     if (bt ==null || !bt.isConnected()) {
-                        bt.cerrarBT();
+
                         mostrarToast(Toast.LENGTH_SHORT, "Servicio no conectado");
                         conectar.setEnabled(true);
                         desconectar.setEnabled(false);
@@ -189,7 +210,7 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
                 public void onClick(View v) {
 
                     if (bt ==null || !bt.isConnected()) {
-                        bt.cerrarBT();
+
                         mostrarToast(Toast.LENGTH_SHORT, "Servicio no conectado");
                         conectar.setEnabled(true);
                         desconectar.setEnabled(false);
@@ -227,11 +248,13 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
     private void registrarSensores() {
         sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_NORMAL);
         sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY), SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     private void eliminarRegistroSensores() {
         sensorManager.unregisterListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER));
         sensorManager.unregisterListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY));
+        sensorManager.unregisterListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT));
     }
 
     private void mostrarToast(final int duracion, final String text) {
@@ -248,18 +271,21 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
 
     }
 
-    private AlertDialog mostrarVentanaEmergente(String titulo, String mensaje) {
+    private AlertDialog mostrarVentanaEmergente(String titulo, String mensaje, final String enviar) {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage(mensaje);
         builder.setTitle(titulo);
         builder.setPositiveButton("SI", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
-
+               /*
                 while(bt == null || !bt.isConnected())
-                    bt.conectar();
-                bt.enviar("puerta");
-                bt.cerrarBT();
+                        bt.conectar(DIR_COLLAR);
+
+                        bt.enviar(enviar);
+                        bt.cerrarBT();
+                        */
+               mostrarToast(Toast.LENGTH_SHORT,enviar+"!");
             }
         });
 
@@ -285,10 +311,6 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
     @Override
     protected void onPause() {
         eliminarRegistroSensores();
-        if(bt != null && bt.isConnected()){
-            recibir.pararRecibir();
-        }
-
         super.onPause();
     }
 
@@ -296,7 +318,6 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
     public void onStop() {
         super.onStop();
         eliminarRegistroSensores();
-
         if(bt != null && bt.isConnected()){
             recibir.pararRecibir();
         }
@@ -311,21 +332,14 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
         super.onResume();
     }
 
-    @Override
-    protected void onRestart() {
-        registrarSensores();
-        if(bt != null && bt.isConnected()) {
-            recibir.comenzarARecibir();
-        }
-        super.onRestart();
-    }
-
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        recibir.pararRecibir();
-        bt.cerrarBT();
+        if(bt != null && bt.isConnected()) {
+            recibir.pararRecibir();
+            bt.cerrarBT();
+        }
     }
 
 

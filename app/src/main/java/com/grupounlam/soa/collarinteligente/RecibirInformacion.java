@@ -15,7 +15,8 @@ public class RecibirInformacion extends AppCompatActivity{
     private boolean ejecutar;
     private Handler mHandler;
     private boolean registrar;
-    private String[] valores = new String[7];
+    private static final int CANT_INFO = 10;
+    private String[] valores;
 
     public RecibirInformacion(DispositivosBT blue, Handler miHandler, boolean registrar) {
         this.bt = blue;
@@ -36,6 +37,7 @@ public class RecibirInformacion extends AppCompatActivity{
          @Override
          public void run() {
              ejecutar = true;
+             valores = new String[CANT_INFO];
              while(ejecutar) {
                  Message mensaje = new Message();
                  mensaje.setTarget(mHandler);

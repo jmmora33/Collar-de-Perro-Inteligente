@@ -16,7 +16,7 @@ public class DispositivosBT  extends AppCompatActivity {
 
     private static final String TAG = "DispositivosBT";
     private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    public static final String ADDRESS = "00:21:13:00:83:8C";
+
 
     private BluetoothAdapter mBtAdapter ;
     private BluetoothDevice device ;
@@ -35,7 +35,7 @@ public class DispositivosBT  extends AppCompatActivity {
         mmInStream = null;
     }
 
-    public  void conectar(){
+    public  void conectar(String mac){
 
                 mBtAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -46,7 +46,7 @@ public class DispositivosBT  extends AppCompatActivity {
                 }
 
                 if (btSocket == null) {
-                    device = mBtAdapter.getRemoteDevice(ADDRESS);
+                    device = mBtAdapter.getRemoteDevice(mac);
                      list = device.getUuids();
                     if(device == null){
                         Log.d("DEVICE","No se pudo vincular con el dispositivo");
