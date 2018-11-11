@@ -118,7 +118,7 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
                                 if(bt == null || !bt.isConnected()) {
                                    mostrarToast(Toast.LENGTH_LONG,  getResources().getString(R.string.no_conection));
                                  }else {
-                                   bt.enviar("buz");
+                                   bt.enviar(BUZZER);
                                    mostrarToast(Toast.LENGTH_LONG, "Alarma!");
                                   }
                             //HAcer sonar el buzzer (que sean segundos)
@@ -129,7 +129,7 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
                                 if(bt == null || !bt.isConnected()) {
                                     mostrarToast(Toast.LENGTH_LONG, getResources().getString(R.string.no_conection));
                                 }else {
-                                    bt.enviar("ultra");
+                                    bt.enviar(ULTRASONIDO);
                                     mostrarToast(Toast.LENGTH_LONG, getResources().getString(R.string.action_shake));
                                 }
                             }
@@ -139,7 +139,7 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
                                 if (event.values[0] < UMBRAL_LUZ)
                                     contador_iluminancia++;
                                 if (contador_iluminancia > 10) {
-                                    dialog = mostrarVentanaEmergente("Se Detecto Poca Luz", "Desea prender la luz?", "luz");
+                                    dialog = mostrarVentanaEmergente("Se Detecto Poca Luz", "Desea prender la luz?", PRENDER_LUZ);
                                     dialog.show();
                                     contador_iluminancia = 0;
                                     LUZ_PRENDIDA = true;
@@ -220,11 +220,13 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
                         if(LUZ_PRENDIDA){
                             mostrarToast(Toast.LENGTH_SHORT, "Apagando Luz!");
                             bt.enviar(APAGAR_LUZ);
-                            luces.setText(getResources().getString(R.string.action_luz_down));
+                            luces.setText(getResources().getString(R.string.action_luz_up));
+                            LUZ_PRENDIDA = false;
                         }else {
                             mostrarToast(Toast.LENGTH_SHORT, "Prendiendo Luz!");
                             bt.enviar(PRENDER_LUZ);
-                            luces.setText(getResources().getString(R.string.action_luz_up));
+                            luces.setText(getResources().getString(R.string.action_luz_down));
+                            LUZ_PRENDIDA = true;
                         }
                     }
                 }
@@ -246,13 +248,15 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
                     } else {
 
                         if(PUERTA_ABIERTA){
-                            mostrarToast(Toast.LENGTH_SHORT, "Abriendo Puerta!");
+                            mostrarToast(Toast.LENGTH_SHORT, "Cerrando Puerta!");
                             bt.enviar(CERRAR_PUERTA); //CerrarPuerta
-                            puerta.setText(getResources().getString(R.string.action_puerta_close));
-                        }else{
-                            mostrarToast(Toast.LENGTH_SHORT, "cerrando Puerta!");
-                            bt.enviar(ABRIR_PUERTA); //AbrirPuerta
                             puerta.setText(getResources().getString(R.string.action_puerta_open));
+                            PUERTA_ABIERTA = false;
+                        }else{
+                            mostrarToast(Toast.LENGTH_SHORT, "Abriendo Puerta!");
+                            bt.enviar(ABRIR_PUERTA); //AbrirPuerta
+                            puerta.setText(getResources().getString(R.string.action_puerta_close));
+                            PUERTA_ABIERTA = true;
                         }
 
                     }
@@ -334,7 +338,7 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
         });
         return builder.create();
     }
-    
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
