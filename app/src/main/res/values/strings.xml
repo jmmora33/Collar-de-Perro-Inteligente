@@ -1,5 +1,11 @@
 <resources>
     <string name="app_name">Collar Inteligente</string>
     <string name="action_settings">Settings</string>
-    <string name="action_lalal">Pedrito</string>
+    <string name="action_luz_down">APAGAR LUZ</string>
+    <string name="action_luz_up">PRENDER LUZ</string>
+    <string name="action_puerta_close">CERRAR PUERTA</string>
+    <string name="action_puerta_open">ABRIR PUERTA</string>
+    <string name="action_shake">Shake it! ultrasonido UP!</string>
+    <string name="no_conection">Collar no conectado :(</string>
+
 </resources>

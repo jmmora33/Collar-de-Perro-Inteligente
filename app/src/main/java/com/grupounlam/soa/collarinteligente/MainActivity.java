@@ -24,6 +24,8 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
 
     ////Direccion de dispositivos
     public static final String DIR_COLLAR = "00:21:13:00:83:8C";
+
+    //// ESTADOS
     public static  boolean IS_CONNECT = false;
     public static boolean PUERTA_ABIERTA = false;
     public static boolean LUZ_PRENDIDA = false;
@@ -52,13 +54,21 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
     private Handler handlerDatos;
     private Handler handlerPuerta;
     private Handler handlerNews;
-    /// PARA EL SHAKE
+
+    /// DATA PARA EL ENVIO DE INFORMACION
+    private static final String ABRIR_PUERTA = "1";
+    private static final String CERRAR_PUERTA = "2";
+    private static final String PRENDER_LUZ = "3";
+    private static final String APAGAR_LUZ = "4";
+    private static final String ULTRASONIDO = "5";
+    private static final String BUZZER = "6";
 
     //DIALOG
     private AlertDialog dialog;
 
 
     // Inicializa y asocia los campos y botones
+
     private void initComponentes() {
         puerta = (Button) findViewById(R.id.puertaButton);
         conectar = (Button) findViewById(R.id.conectarButton);
@@ -104,28 +114,38 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
 
                         case Sensor.TYPE_PROXIMITY:
                             if (event.values[0] < event.sensor.getMaximumRange())
-                                Toast.makeText(getBaseContext(), "PRECISAS ALGO?", Toast.LENGTH_SHORT).show();
+
+                                if(bt == null || !bt.isConnected()) {
+                                   mostrarToast(Toast.LENGTH_LONG,  getResources().getString(R.string.no_conection));
+                                 }else {
+                                   bt.enviar("buz");
+                                   mostrarToast(Toast.LENGTH_LONG, "Alarma!");
+                                  }
+                            //HAcer sonar el buzzer (que sean segundos)
                             break;
                         case Sensor.TYPE_ACCELEROMETER:
                             if (Math.abs(event.values[0]) > SHAKE || Math.abs(event.values[1]) > SHAKE || Math.abs(event.values[2]) > SHAKE) {
                                 Log.d("Sensor", "Hubo un shake madafaca, prendiendo ultrasonido");
                                 if(bt == null || !bt.isConnected()) {
-                                    mostrarToast(Toast.LENGTH_LONG, "No se encontro conexion! ");
+                                    mostrarToast(Toast.LENGTH_LONG, getResources().getString(R.string.no_conection));
                                 }else {
-                                    bt.enviar("u");
-                                    mostrarToast(Toast.LENGTH_LONG, "Shake it! ultrasonido UP!");
+                                    bt.enviar("ultra");
+                                    mostrarToast(Toast.LENGTH_LONG, getResources().getString(R.string.action_shake));
                                 }
                             }
                             break;
                         case Sensor.TYPE_LIGHT:
-                                if(event.values[0] < UMBRAL_LUZ && !LUZ_PRENDIDA)
-                                    contador_iluminancia ++;
-                                if(contador_iluminancia > 10){
-                                    dialog = mostrarVentanaEmergente("Ingrese Opcion", "Desea prender la luz?", "luz");
+                            if(!LUZ_PRENDIDA) {
+                                if (event.values[0] < UMBRAL_LUZ)
+                                    contador_iluminancia++;
+                                if (contador_iluminancia > 10) {
+                                    dialog = mostrarVentanaEmergente("Se Detecto Poca Luz", "Desea prender la luz?", "luz");
                                     dialog.show();
                                     contador_iluminancia = 0;
                                     LUZ_PRENDIDA = true;
+                                    luces.setText(R.string.action_luz_down);
                                 }
+                            }
                             break;
                     }
 
@@ -134,6 +154,8 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
 
 
             }
+
+
 
             @Override
             public void onAccuracyChanged(Sensor sensor, int accuracy) {
@@ -191,12 +213,19 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
 
                     if (bt ==null || !bt.isConnected()) {
 
-                        mostrarToast(Toast.LENGTH_SHORT, "Servicio no conectado");
+                        mostrarToast(Toast.LENGTH_SHORT, getResources().getString(R.string.no_conection));
                         conectar.setEnabled(true);
                         desconectar.setEnabled(false);
                     } else {
-                        mostrarToast(Toast.LENGTH_SHORT, "Prendiendo Luz!");
-                        bt.enviar("Luz");
+                        if(LUZ_PRENDIDA){
+                            mostrarToast(Toast.LENGTH_SHORT, "Apagando Luz!");
+                            bt.enviar(APAGAR_LUZ);
+                            luces.setText(getResources().getString(R.string.action_luz_down));
+                        }else {
+                            mostrarToast(Toast.LENGTH_SHORT, "Prendiendo Luz!");
+                            bt.enviar(PRENDER_LUZ);
+                            luces.setText(getResources().getString(R.string.action_luz_up));
+                        }
                     }
                 }
             });
@@ -211,12 +240,21 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
 
                     if (bt ==null || !bt.isConnected()) {
 
-                        mostrarToast(Toast.LENGTH_SHORT, "Servicio no conectado");
+                        mostrarToast(Toast.LENGTH_SHORT, getResources().getString(R.string.no_conection));
                         conectar.setEnabled(true);
                         desconectar.setEnabled(false);
                     } else {
-                        mostrarToast(Toast.LENGTH_SHORT, "Abriendo Puerta!");
-                        bt.enviar("Puerta");
+
+                        if(PUERTA_ABIERTA){
+                            mostrarToast(Toast.LENGTH_SHORT, "Abriendo Puerta!");
+                            bt.enviar(CERRAR_PUERTA); //CerrarPuerta
+                            puerta.setText(getResources().getString(R.string.action_puerta_close));
+                        }else{
+                            mostrarToast(Toast.LENGTH_SHORT, "cerrando Puerta!");
+                            bt.enviar(ABRIR_PUERTA); //AbrirPuerta
+                            puerta.setText(getResources().getString(R.string.action_puerta_open));
+                        }
+
                     }
 
 
@@ -296,9 +334,7 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
         });
         return builder.create();
     }
-
-
-
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -332,7 +368,6 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
         super.onResume();
     }
 
-
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -341,7 +376,4 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
             bt.cerrarBT();
         }
     }
-
-
-
 }

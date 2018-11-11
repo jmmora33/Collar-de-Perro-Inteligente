@@ -25,7 +25,7 @@ public class RecibirInformacion extends AppCompatActivity{
 
     }
 
-    public RecibirInformacion( Handler miHandler) {
+    public RecibirInformacion(Handler miHandler) {
         mHandler = miHandler;
         registrar = true;
 
@@ -79,7 +79,7 @@ public class RecibirInformacion extends AppCompatActivity{
             @Override
             public void run() {
                 while(true) {
-
+                    if(!MainActivity.PUERTA_ABIERTA){}
     /*
                         DispositivosBT bt = new DispositivosBT();
                         bt.conectar();
