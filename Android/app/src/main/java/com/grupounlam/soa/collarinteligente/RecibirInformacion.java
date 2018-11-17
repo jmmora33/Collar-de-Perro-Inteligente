@@ -9,25 +9,22 @@ import android.util.Log;
 
 
 
-public class RecibirInformacion extends AppCompatActivity{
+public class RecibirInformacion{
 
     private DispositivosBT bt;
     private boolean ejecutar;
     private Handler mHandler;
-    private boolean registrar;
     private static final int CANT_INFO = 20;
+    public static  boolean CONECTADO ;
     private String[] valores;
 
-    public RecibirInformacion(DispositivosBT blue, Handler miHandler, boolean registrar) {
+    public RecibirInformacion(DispositivosBT blue, Handler miHandler) {
         this.bt = blue;
-        this.registrar = registrar;
         mHandler = miHandler;
 
     }
 
-    public RecibirInformacion(Handler miHandler) {
-        mHandler = miHandler;
-        registrar = true;
+    public RecibirInformacion() {
 
     }
 
@@ -74,50 +71,38 @@ public class RecibirInformacion extends AppCompatActivity{
     }
 
     public void cercaniaCollar(){
-
         new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while(true) {
-                    if(!MainActivity.PUERTA_ABIERTA){}
-    /*
-                        DispositivosBT bt = new DispositivosBT();
-                        bt.conectar();
-                        if (bt.isConnected()) {
-                            Message mensaje = new Message();
-                            Bundle info = new Bundle();
-                            mensaje.setTarget(mHandler);
-                            info.putString("sol", "abrir");
-                            mensaje.setData(info);
-                            bt.cerrarBT();
+                @Override
+                public void run() {
+                    while(true) {
+
+                        if(!MainActivity.PUERTA_ABIERTA && !CONECTADO) {
+                            bt.conectar(MainActivity.DIR_COLLAR);
+                            if (bt.isConnected()) {
+                                Message mensaje = new Message();
+                                Bundle info = new Bundle();
+                                mensaje.setTarget(mHandler);
+                                info.putString("sol", String.valueOf(MainActivity.PUERTA_ABIERTA));
+                                mensaje.setData(info);
+                                bt.cerrarBT();
+                            }
+                        }
+
+                        try {
+                            Thread.sleep(5000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
                     }
 
-                    try {
-                        Thread.sleep(5000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                     */
                 }
 
-                }
-
-        }).start();
-    }
-
-    @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-    }
-
-    @Override
-    protected void onRestart() {
-        super.onRestart();
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-    }
+            }).start();
+        }
 
 }
+
+
+
+

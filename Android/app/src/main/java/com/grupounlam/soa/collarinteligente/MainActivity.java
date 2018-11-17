@@ -19,14 +19,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
-public class MainActivity extends AppCompatActivity implements  SensorEventListener {
+public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
 
     ////Direccion de dispositivos
     public static final String DIR_COLLAR = "00:21:13:00:83:8C";
 
     //// ESTADOS
-    public static  boolean IS_CONNECT = false;
+    public static boolean SOLICITUD_PUERTA = false;
     public static boolean PUERTA_ABIERTA = false;
     public static boolean LUZ_PRENDIDA = false;
 
@@ -81,7 +81,7 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
         toast.setGravity(Gravity.CENTER, 0, 0);
         desconectar.setEnabled(false);
         conectar.setEnabled(true);
-        sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         handlerNews = new Handler();
         handlerDatos = new Handler() {
             @Override
@@ -96,72 +96,76 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
         handlerPuerta = new Handler() {
             @Override
             public void handleMessage(Message msg) {
-                dialog = mostrarVentanaEmergente("Ingrese Opcion", "Desea abrir la puerta?", "puerta");
+
+                if(!SOLICITUD_PUERTA){
+                dialog = ventanaEmergente("Ingrese Opcion", "Desea abrir la puerta?", "puerta");
                 dialog.show();
+                SOLICITUD_PUERTA = true;
+                }
+                removeMessages(0);
             }
         };
-        verPuerta = new RecibirInformacion(handlerPuerta);
+        bt = new DispositivosBT();
+        verPuerta = new RecibirInformacion(bt, handlerPuerta);
         verPuerta.cercaniaCollar();
     }
 
 
-            @Override
-            public void onSensorChanged(SensorEvent event) {
+    @Override
+    public void onSensorChanged(SensorEvent event) {
 
-                synchronized (this) {
+        synchronized (this) {
 
-                    switch (event.sensor.getType()) {
+            switch (event.sensor.getType()) {
 
-                        case Sensor.TYPE_PROXIMITY:
-                            if (event.values[0] < event.sensor.getMaximumRange())
+                case Sensor.TYPE_PROXIMITY:
+                    if (event.values[0] < event.sensor.getMaximumRange())
 
-                                if(bt == null || !bt.isConnected()) {
-                                   mostrarToast(Toast.LENGTH_LONG,  getResources().getString(R.string.no_conection));
-                                 }else {
-                                   bt.enviar(BUZZER);
-                                   mostrarToast(Toast.LENGTH_LONG, "Alarma!");
-                                  }
-                            //HAcer sonar el buzzer (que sean segundos)
-                            break;
-                        case Sensor.TYPE_ACCELEROMETER:
-                            if (Math.abs(event.values[0]) > SHAKE || Math.abs(event.values[1]) > SHAKE || Math.abs(event.values[2]) > SHAKE) {
-                                Log.d("Sensor", "Hubo un shake madafaca, prendiendo ultrasonido");
-                                if(bt == null || !bt.isConnected()) {
-                                    mostrarToast(Toast.LENGTH_LONG, getResources().getString(R.string.no_conection));
-                                }else {
-                                    bt.enviar(ULTRASONIDO);
-                                    mostrarToast(Toast.LENGTH_LONG, getResources().getString(R.string.action_shake));
-                                }
-                            }
-                            break;
-                        case Sensor.TYPE_LIGHT:
-                            if(!LUZ_PRENDIDA) {
-                                if (event.values[0] < UMBRAL_LUZ)
-                                    contador_iluminancia++;
-                                if (contador_iluminancia > 10) {
-                                    dialog = mostrarVentanaEmergente("Se Detecto Poca Luz", "Desea prender la luz?", PRENDER_LUZ);
-                                    dialog.show();
-                                    contador_iluminancia = 0;
-                                    LUZ_PRENDIDA = true;
-                                    luces.setText(R.string.action_luz_down);
-                                }
-                            }
-                            break;
+                        if (bt == null || !bt.isConnected()) {
+                            mostrarToast(Toast.LENGTH_LONG, getResources().getString(R.string.no_conection));
+                        } else {
+                            bt.enviar(BUZZER);
+                            mostrarToast(Toast.LENGTH_LONG, "Alarma!");
+                        }
+                    //HAcer sonar el buzzer (que sean segundos)
+                    break;
+                case Sensor.TYPE_ACCELEROMETER:
+                    if (Math.abs(event.values[0]) > SHAKE || Math.abs(event.values[1]) > SHAKE || Math.abs(event.values[2]) > SHAKE) {
+                        Log.d("Sensor", "Hubo un shake madafaca, prendiendo ultrasonido");
+                        if (bt == null || !bt.isConnected()) {
+                            mostrarToast(Toast.LENGTH_LONG, getResources().getString(R.string.no_conection));
+                        } else {
+                            bt.enviar(ULTRASONIDO);
+                            mostrarToast(Toast.LENGTH_LONG, getResources().getString(R.string.action_shake));
+                        }
                     }
-
-
-                }
-
-
+                    break;
+                case Sensor.TYPE_LIGHT:
+                    if (!LUZ_PRENDIDA) {
+                        if (event.values[0] < UMBRAL_LUZ)
+                            contador_iluminancia++;
+                        if (contador_iluminancia > 10) {
+                            dialog = ventanaEmergente("Se Detecto Poca Luz", "Desea prender la luz?", PRENDER_LUZ);
+                            dialog.show();
+                            contador_iluminancia = 0;
+                            LUZ_PRENDIDA = true;
+                            luces.setText(R.string.action_luz_down);
+                        }
+                    }
+                    break;
             }
 
 
+        }
 
-            @Override
-            public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
-            }
+    }
 
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
 
 
     //// Inicializa los listeners.
@@ -178,29 +182,30 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
                     mostrarToast(Toast.LENGTH_SHORT, "Conectando...");
 
                     //OPtimizar para quitar esta logica de aca.
-                    while (i < UMBRAL_CONEXION && !bt.isConnected()){
+                    while (i < UMBRAL_CONEXION && !bt.isConnected()) {
                         bt.conectar(DIR_COLLAR);
 
                         try {
                             Thread.sleep(2000);
-                        } catch(InterruptedException e) {
-                            Log.d("SLEEPING ERROR","LCG");
+                        } catch (InterruptedException e) {
+                            Log.d("SLEEPING ERROR", "LCG");
                         }
-                    if (bt.isConnected()) {
-                        conectar.setEnabled(false);
-                        desconectar.setEnabled(true);
+                        if (bt.isConnected()) {
+                            conectar.setEnabled(false);
+                            desconectar.setEnabled(true);
 
-                        mostrarToast(Toast.LENGTH_SHORT, "conexion exitosa!");
-                        recibir = new RecibirInformacion(bt, handlerDatos, false);
-                        recibir.comenzarARecibir();
-                        Log.d("BT:", "Conexion exitosa");
-                    } else {
+                            mostrarToast(Toast.LENGTH_SHORT, "conexion exitosa!");
+                            recibir = new RecibirInformacion(bt, handlerDatos);
+                            recibir.comenzarARecibir();
+                            verPuerta.CONECTADO = true;
+                            Log.d("BT:", "Conexion exitosa");
+                        } else {
 
-                        mostrarToast(Toast.LENGTH_SHORT, "Fallo Conexion :(");
-                        Log.d("BT:", "Fallo conexion");
+                            mostrarToast(Toast.LENGTH_SHORT, "Fallo Conexion :(");
+                            Log.d("BT:", "Fallo conexion");
+                        }
+                        i++;
                     }
-                    i++;
-                }
                 }
             });
         }
@@ -211,18 +216,18 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
                 @Override
                 public void onClick(View v) {
 
-                    if (bt ==null || !bt.isConnected()) {
+                    if (bt == null || !bt.isConnected()) {
 
                         mostrarToast(Toast.LENGTH_SHORT, getResources().getString(R.string.no_conection));
                         conectar.setEnabled(true);
                         desconectar.setEnabled(false);
                     } else {
-                        if(LUZ_PRENDIDA){
+                        if (LUZ_PRENDIDA) {
                             mostrarToast(Toast.LENGTH_SHORT, "Apagando Luz!");
                             bt.enviar(APAGAR_LUZ);
                             luces.setText(getResources().getString(R.string.action_luz_up));
                             LUZ_PRENDIDA = false;
-                        }else {
+                        } else {
                             mostrarToast(Toast.LENGTH_SHORT, "Prendiendo Luz!");
                             bt.enviar(PRENDER_LUZ);
                             luces.setText(getResources().getString(R.string.action_luz_down));
@@ -240,19 +245,19 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
                 @Override
                 public void onClick(View v) {
 
-                    if (bt ==null || !bt.isConnected()) {
+                    if (bt == null || !bt.isConnected()) {
 
                         mostrarToast(Toast.LENGTH_SHORT, getResources().getString(R.string.no_conection));
                         conectar.setEnabled(true);
                         desconectar.setEnabled(false);
                     } else {
 
-                        if(PUERTA_ABIERTA){
+                        if (PUERTA_ABIERTA) {
                             mostrarToast(Toast.LENGTH_SHORT, "Cerrando Puerta!");
                             bt.enviar(CERRAR_PUERTA); //CerrarPuerta
                             puerta.setText(getResources().getString(R.string.action_puerta_open));
                             PUERTA_ABIERTA = false;
-                        }else{
+                        } else {
                             mostrarToast(Toast.LENGTH_SHORT, "Abriendo Puerta!");
                             bt.enviar(ABRIR_PUERTA); //AbrirPuerta
                             puerta.setText(getResources().getString(R.string.action_puerta_close));
@@ -275,6 +280,7 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
                     if (bt != null && bt.isConnected()) {
                         recibir.pararRecibir();
                         bt.cerrarBT();
+                        verPuerta.CONECTADO = false;
                     }
                     mostrarToast(Toast.LENGTH_LONG, "Desconectado!");
                     conectar.setEnabled(true);
@@ -309,25 +315,31 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
                 toast.setDuration(duracion);
                 toast.show();
             }
-        },500);
+        }, 500);
 
     }
 
-    private AlertDialog mostrarVentanaEmergente(String titulo, String mensaje, final String enviar) {
+    private AlertDialog ventanaEmergente(String titulo, String mensaje, final String enviar) {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage(mensaje);
         builder.setTitle(titulo);
         builder.setPositiveButton("SI", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
-               /*
-                while(bt == null || !bt.isConnected())
-                        bt.conectar(DIR_COLLAR);
+                boolean cerrar = false;
 
-                        bt.enviar(enviar);
-                        bt.cerrarBT();
-                        */
-               mostrarToast(Toast.LENGTH_SHORT,enviar+"!");
+                if (bt == null || !bt.isConnected())
+                    cerrar = true;
+
+                while (bt == null || !bt.isConnected())
+                    bt.conectar(DIR_COLLAR);
+
+                bt.enviar(enviar);
+
+                if (cerrar)
+                    bt.cerrarBT();
+
+                mostrarToast(Toast.LENGTH_SHORT, enviar + "!");
             }
         });
 
@@ -358,7 +370,7 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
     public void onStop() {
         super.onStop();
         eliminarRegistroSensores();
-        if(bt != null && bt.isConnected()){
+        if (bt != null && bt.isConnected()) {
             recibir.pararRecibir();
         }
     }
@@ -366,7 +378,7 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
     @Override
     protected void onResume() {
         registrarSensores();
-        if(bt != null && bt.isConnected()) {
+        if (bt != null && bt.isConnected()) {
             recibir.comenzarARecibir();
         }
         super.onResume();
@@ -375,7 +387,7 @@ public class MainActivity extends AppCompatActivity implements  SensorEventListe
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if(bt != null && bt.isConnected()) {
+        if (bt != null && bt.isConnected()) {
             recibir.pararRecibir();
             bt.cerrarBT();
         }

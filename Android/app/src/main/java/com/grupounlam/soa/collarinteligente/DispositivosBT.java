@@ -63,7 +63,6 @@ public class DispositivosBT  extends AppCompatActivity {
                                 //insert code to deal with this
                             }
                         }
-                        Log.d("arduino", "service conectado al arduino");
                     }
 
 
