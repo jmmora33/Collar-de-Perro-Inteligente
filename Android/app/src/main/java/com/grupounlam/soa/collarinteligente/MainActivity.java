@@ -90,6 +90,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 Log.d("Mensaje:", mensaje.getString("temp"));
                 puertaVar.setText(mensaje.getString("temp"));
                 tempVar.setText(mensaje.getString("puerta"));
+                if(PUERTA_ABIERTA) //falta evaluar la variable.
+                    modificarBoton("puerta",getResources().getString(R.string.action_puerta_close));
                 removeMessages(0);
             }
         };
@@ -329,26 +331,38 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                public void run() {
 
                    bt.conectar(DIR_COLLAR);
+                   while(!bt.isConnected())
+                   {
+                       try {
+                           sleep(1000);
+                       } catch (InterruptedException e) {
+                           Log.d("TH","ERROR DE DORMIR");
+                       }
+
+                       //Por si ya se conecto desde otro lado
+                       if(!bt.isConnected())
+                           bt.conectar(DIR_COLLAR);
+                   }
 
                    if(bt.isConnected()){
+
                        bt.enviar(enviar);
                        if(enviar.equals(ABRIR_PUERTA)){
-                          modificarBoton("puerta",getResources().getString(R.string.action_puerta_close));
+                           PUERTA_ABIERTA = true;
                        }
                        if(enviar.equals(PRENDER_LUZ)){
                            modificarBoton("luz",getResources().getString(R.string.action_luz_down));
+                       }
+                       //Espero a que se envie para que se cierre.
+                       try {
+                           sleep(4000);
+                       } catch (InterruptedException e) {
+                           e.printStackTrace();
                        }
                        bt.cerrarBT();
                    }else{
                        Log.d("INFO","NO SE MANDA INFO");
                    }
-
-                   try {
-                       sleep(2000);
-                   } catch (InterruptedException e) {
-                       e.printStackTrace();
-                   }
-
 
                    ACCESO_DENEGADO = true;
                }
@@ -368,6 +382,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 dialog.dismiss();
             }
         });
+
         return builder.create();
     }
 

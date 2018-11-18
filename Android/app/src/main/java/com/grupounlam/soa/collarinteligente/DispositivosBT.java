@@ -126,7 +126,7 @@ public class DispositivosBT  extends AppCompatActivity {
             readMessage = new String(msgBuffer, 0, bytes);
         } catch (IOException e) {
             Log.d(TAG,"Error al recibir dato...");
-
+            return "ERROR";
         }
         return readMessage;
     }
@@ -139,7 +139,7 @@ public class DispositivosBT  extends AppCompatActivity {
             public void run() {
                 byte[] msgBuffer = input.getBytes();           //converts entered String into bytes
                 try {
-                    mmOutStream.write(msgBuffer);                //write bytes over BT connection via outstream
+                        mmOutStream.write(msgBuffer);
                 } catch (IOException e) {
                     Log.d("ERROR", "Error al enviar dato...");
                 }
