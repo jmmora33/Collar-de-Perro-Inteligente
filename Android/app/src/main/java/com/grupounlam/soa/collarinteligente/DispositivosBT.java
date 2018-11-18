@@ -10,6 +10,8 @@ import android.util.Log;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.UUID;
 
 public class DispositivosBT  extends AppCompatActivity {
@@ -24,80 +26,70 @@ public class DispositivosBT  extends AppCompatActivity {
     private OutputStream mmOutStream;
     private InputStream mmInStream;
 
-    private boolean iniciar;
-    private String cadenita;
-    private ParcelUuid list[];
+
+
     public DispositivosBT(){
-        mBtAdapter = null;
+        mBtAdapter = BluetoothAdapter.getDefaultAdapter();
         device = null;
         btSocket = null;
         mmOutStream = null;
         mmInStream = null;
     }
 
-    public  void conectar(String mac){
+    public synchronized void conectar(String mac){
 
-                mBtAdapter = BluetoothAdapter.getDefaultAdapter();
+
 
                 if(!mBtAdapter.enable()){
                     Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                     startActivityForResult(enableIntent,1);
 
                 }
+    synchronized (this) {
 
-                if (btSocket == null) {
-                    device = mBtAdapter.getRemoteDevice(mac);
-                     list = device.getUuids();
-                    if(device == null){
-                        Log.d("DEVICE","No se pudo vincular con el dispositivo");
-                    }else {
-                        Log.d("DEVICE", device.toString() + " HC-06");
-                        btSocket = crearSocketBT(device);
-                        // Establish the Bluetooth btSocket connection.
-                        try {
-                            btSocket.connect();
-                        } catch (IOException e) {
-                            try {
-                                btSocket.close();
-                            } catch (IOException e2) {
-                                //insert code to deal with this
-                            }
-                        }
-                    }
+            device = mBtAdapter.getRemoteDevice(mac);
 
-
-                } else {
-                    if (!btSocket.isConnected()) {
-                        // Establish the Bluetooth btSocket connection.
-                        try {
-                            btSocket.connect();
-                        } catch (IOException e) {
-                            try {
-                                btSocket.close();
-                            } catch (IOException e2) {
-                                //insert code to deal with this
-                            }
-                        }
-                    }
-                }
-                if(btSocket.isConnected())
-                {
-                    InputStream tmpIn = null;
-                    OutputStream tmpOut = null;
-
+            if (device == null) {
+                Log.d(TAG, "No se pudo vincular con el dispositivo");
+            } else {
+                Log.d(TAG, device.toString() + " HC-06");
+                btSocket = crearSocketBT(device);
+                // Establish the Bluetooth btSocket connection.
+                try {
+                    btSocket.connect();
+                } catch (IOException e) {
                     try {
-                        //Create I/O streams for connection
-                        tmpIn = btSocket.getInputStream();
-                        tmpOut = btSocket.getOutputStream();
-                    } catch (IOException e) {
-                        Log.d("ERROR","No se que ha pasau");
+                        btSocket.close();
+                    } catch (IOException e2) {
+                        //insert code to deal with this
                     }
-
-                    mmOutStream = tmpOut;
-                    mmInStream =tmpIn;
                 }
-
             }
+
+            if (btSocket.isConnected()) {
+            InputStream tmpIn = null;
+            OutputStream tmpOut = null;
+            try {
+                //Create I/O streams for connection
+                tmpIn = btSocket.getInputStream();
+                tmpOut = btSocket.getOutputStream();
+            } catch (IOException e) {
+                Log.d(TAG, "ERROR" + "No se que ha pasau");
+            }
+
+            mmOutStream = tmpOut;
+            mmInStream = tmpIn;
+            }else{
+
+                try {
+                    btSocket.close();
+                    btSocket = null;
+                } catch (IOException e2) {
+                    //insert code to deal with this
+                }
+            }
+    }
+    }
 
 
 
@@ -111,10 +103,9 @@ public class DispositivosBT  extends AppCompatActivity {
 
             if(btSocket != null && btSocket.isConnected())
                 btSocket.close();
-
-            iniciar = false;
+                btSocket = null;
             } catch (IOException e) {
-                Log.d("ERROR", "Error cerrando el dispositivo");
+                Log.d(TAG, "Error cerrando el dispositivo");
             }
 
 
@@ -134,7 +125,7 @@ public class DispositivosBT  extends AppCompatActivity {
             bytes = mmInStream.read(msgBuffer);
             readMessage = new String(msgBuffer, 0, bytes);
         } catch (IOException e) {
-            Log.d("ERROR","Error al recibir dato...");
+            Log.d(TAG,"Error al recibir dato...");
 
         }
         return readMessage;
@@ -166,18 +157,24 @@ public class DispositivosBT  extends AppCompatActivity {
     private BluetoothSocket crearSocketBT(BluetoothDevice device)
     {
         BluetoothSocket retorno = null;
-        int i = 0;
-        mBtAdapter.cancelDiscovery();
+
+
         try {
 
-            retorno = device.createRfcommSocketToServiceRecord(BTMODULEUUID);
-        }catch(IOException e){
-            Log.d("Socket","Error en la vinculacion con Arduino.");
+            Method m = device.getClass().getMethod("createRfcommSocket", new Class[] {int.class});
+            retorno = (BluetoothSocket) m.invoke(device, 1);
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
         }
-            return retorno;
+        return retorno;
 
     }
 
-
-
+    public BluetoothAdapter getmBtAdapter() {
+        return mBtAdapter;
+    }
 }

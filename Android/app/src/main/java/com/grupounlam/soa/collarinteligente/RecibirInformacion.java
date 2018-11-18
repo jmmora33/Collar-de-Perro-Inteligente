@@ -1,12 +1,12 @@
 package com.grupounlam.soa.collarinteligente;
 
+import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
+import java.util.Set;
 
 
 public class RecibirInformacion{
@@ -15,7 +15,6 @@ public class RecibirInformacion{
     private boolean ejecutar;
     private Handler mHandler;
     private static final int CANT_INFO = 20;
-    public static  boolean CONECTADO ;
     private String[] valores;
 
     public RecibirInformacion(DispositivosBT blue, Handler miHandler) {
@@ -24,9 +23,6 @@ public class RecibirInformacion{
 
     }
 
-    public RecibirInformacion() {
-
-    }
 
     public void comenzarARecibir(){
 
@@ -74,19 +70,23 @@ public class RecibirInformacion{
         new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    while(true) {
+                    while (true) {
 
-                        if(!MainActivity.PUERTA_ABIERTA && !CONECTADO) {
+                        if (!MainActivity.PUERTA_ABIERTA && !MainActivity.ACCESO_DENEGADO) {
+
                             bt.conectar(MainActivity.DIR_COLLAR);
                             if (bt.isConnected()) {
+                                bt.cerrarBT();
+                                MainActivity.PUERTA_ABIERTA = true;
                                 Message mensaje = new Message();
                                 Bundle info = new Bundle();
                                 mensaje.setTarget(mHandler);
                                 info.putString("sol", String.valueOf(MainActivity.PUERTA_ABIERTA));
                                 mensaje.setData(info);
-                                bt.cerrarBT();
+                                mensaje.sendToTarget();
                             }
                         }
+
 
                         try {
                             Thread.sleep(5000);
@@ -96,10 +96,10 @@ public class RecibirInformacion{
 
                     }
 
-                }
-
-            }).start();
+                }}).start();
         }
+
+
 
 }
 

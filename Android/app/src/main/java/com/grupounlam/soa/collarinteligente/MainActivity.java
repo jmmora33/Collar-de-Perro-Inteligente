@@ -1,6 +1,6 @@
 package com.grupounlam.soa.collarinteligente;
 
-import android.bluetooth.BluetoothServerSocket;
+import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -18,6 +18,8 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import static java.lang.Thread.*;
+
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
@@ -26,13 +28,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public static final String DIR_COLLAR = "00:21:13:00:83:8C";
 
     //// ESTADOS
-    public static boolean SOLICITUD_PUERTA = false;
     public static boolean PUERTA_ABIERTA = false;
     public static boolean LUZ_PRENDIDA = false;
+    public static boolean ACCESO_DENEGADO = false;
 
     //// Sensores
     private SensorManager sensorManager;
-    private static int UMBRAL_LUZ = 10;
+    private static final int UMBRAL_LUZ = 10;
     private static final int SHAKE = 15;
     private int contador_iluminancia;
 
@@ -41,19 +43,18 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private Button desconectar;
     private Button luces;
     private Button puerta;
-    private TextView temperatura;
     private TextView tempVar;
     private TextView puertaVar;
     private Toast toast;
 
     //// BT
     private DispositivosBT bt;
-    private final int UMBRAL_CONEXION = 5;
+    private static final int UMBRAL_CONEXION = 1;
     private RecibirInformacion recibir;
     private RecibirInformacion verPuerta;
     private Handler handlerDatos;
     private Handler handlerPuerta;
-    private Handler handlerNews;
+
 
     /// DATA PARA EL ENVIO DE INFORMACION
     private static final String ABRIR_PUERTA = "1";
@@ -69,11 +70,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     // Inicializa y asocia los campos y botones
 
+    @SuppressLint("HandlerLeak")
     private void initComponentes() {
         puerta = (Button) findViewById(R.id.puertaButton);
         conectar = (Button) findViewById(R.id.conectarButton);
         desconectar = (Button) findViewById(R.id.desconectarButton);
-        temperatura = (TextView) findViewById(R.id.tempView);
         luces = (Button) findViewById(R.id.luzButton);
         tempVar = (TextView) findViewById(R.id.tempVar);
         puertaVar = (TextView) findViewById(R.id.estadoPuertaVar);
@@ -82,7 +83,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         desconectar.setEnabled(false);
         conectar.setEnabled(true);
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        handlerNews = new Handler();
         handlerDatos = new Handler() {
             @Override
             public void handleMessage(Message msg) {
@@ -96,12 +96,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         handlerPuerta = new Handler() {
             @Override
             public void handleMessage(Message msg) {
-
-                if(!SOLICITUD_PUERTA){
-                dialog = ventanaEmergente("Ingrese Opcion", "Desea abrir la puerta?", "puerta");
+                dialog = ventanaEmergente("El Perro Esta Cerca!", "Desea abrir la puerta?", ABRIR_PUERTA);
                 dialog.show();
-                SOLICITUD_PUERTA = true;
-                }
                 removeMessages(0);
             }
         };
@@ -178,7 +174,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 @Override
                 public void onClick(View v) {
                     int i = 0;
-                    bt = new DispositivosBT();
                     mostrarToast(Toast.LENGTH_SHORT, "Conectando...");
 
                     //OPtimizar para quitar esta logica de aca.
@@ -186,7 +181,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         bt.conectar(DIR_COLLAR);
 
                         try {
-                            Thread.sleep(2000);
+                            sleep(2000);
                         } catch (InterruptedException e) {
                             Log.d("SLEEPING ERROR", "LCG");
                         }
@@ -197,7 +192,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             mostrarToast(Toast.LENGTH_SHORT, "conexion exitosa!");
                             recibir = new RecibirInformacion(bt, handlerDatos);
                             recibir.comenzarARecibir();
-                            verPuerta.CONECTADO = true;
+                            ACCESO_DENEGADO = true;
                             Log.d("BT:", "Conexion exitosa");
                         } else {
 
@@ -280,10 +275,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     if (bt != null && bt.isConnected()) {
                         recibir.pararRecibir();
                         bt.cerrarBT();
-                        verPuerta.CONECTADO = false;
+
                     }
                     mostrarToast(Toast.LENGTH_LONG, "Desconectado!");
                     conectar.setEnabled(true);
+                    ACCESO_DENEGADO = false;
                     desconectar.setEnabled(false);
                     tempVar.setText("");
                     puertaVar.setText("");
@@ -326,31 +322,64 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         builder.setTitle(titulo);
         builder.setPositiveButton("SI", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
-                boolean cerrar = false;
 
-                if (bt == null || !bt.isConnected())
-                    cerrar = true;
 
-                while (bt == null || !bt.isConnected())
-                    bt.conectar(DIR_COLLAR);
+           new Thread(new Runnable() {
+               @Override
+               public void run() {
 
-                bt.enviar(enviar);
+                   bt.conectar(DIR_COLLAR);
 
-                if (cerrar)
-                    bt.cerrarBT();
+                   if(bt.isConnected()){
+                       bt.enviar(enviar);
+                       if(enviar.equals(ABRIR_PUERTA)){
+                          modificarBoton("puerta",getResources().getString(R.string.action_puerta_close));
+                       }
+                       if(enviar.equals(PRENDER_LUZ)){
+                           modificarBoton("luz",getResources().getString(R.string.action_luz_down));
+                       }
+                       bt.cerrarBT();
+                   }else{
+                       Log.d("INFO","NO SE MANDA INFO");
+                   }
 
+                   try {
+                       sleep(2000);
+                   } catch (InterruptedException e) {
+                       e.printStackTrace();
+                   }
+
+
+                   ACCESO_DENEGADO = true;
+               }
+           }).start();
+                dialog.dismiss();
                 mostrarToast(Toast.LENGTH_SHORT, enviar + "!");
             }
         });
 
         builder.setNegativeButton("NO", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
-                dialog.cancel();
+
+                if(enviar.equals(ABRIR_PUERTA)){
+                 PUERTA_ABIERTA = false;
+                 ACCESO_DENEGADO = true;
+                }
+                dialog.dismiss();
             }
         });
         return builder.create();
     }
 
+    public void modificarBoton(String boton,String valor){
+
+        if(boton.equals("puerta")){
+            puerta.setText(valor);
+        }else{
+            luces.setText(valor);
+        }
+
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
