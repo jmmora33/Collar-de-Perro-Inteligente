@@ -70,9 +70,7 @@ public class RecibirInformacion{
         new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    while (true) {
-
-                        if (!MainActivity.PUERTA_ABIERTA && !MainActivity.ACCESO_DENEGADO) {
+                    while (!MainActivity.PUERTA_ABIERTA && !MainActivity.ACCESO_DENEGADO) {
 
                             bt.conectar(MainActivity.DIR_COLLAR);
                             if (bt.isConnected()) {
@@ -85,8 +83,6 @@ public class RecibirInformacion{
                                 mensaje.setData(info);
                                 mensaje.sendToTarget();
                             }
-                        }
-
 
                         try {
                             Thread.sleep(5000);

@@ -91,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 puertaVar.setText(mensaje.getString("temp"));
                 tempVar.setText(mensaje.getString("puerta"));
                 if(PUERTA_ABIERTA) //falta evaluar la variable.
-                    modificarBoton("puerta",getResources().getString(R.string.action_puerta_close));
+                    puerta.setText(getResources().getString(R.string.action_puerta_close));
                 removeMessages(0);
             }
         };
@@ -275,6 +275,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 public void onClick(View v) {
 
                     if (bt != null && bt.isConnected()) {
+                        if(PUERTA_ABIERTA){
+                            bt.enviar(CERRAR_PUERTA);
+                            puerta.setText(getResources().getString(R.string.action_puerta_open));
+                            PUERTA_ABIERTA = false;
+                        }
+                        if(LUZ_PRENDIDA){
+                            bt.enviar(APAGAR_LUZ);
+                            luces.setText(getResources().getString(R.string.action_luz_down));
+                            LUZ_PRENDIDA = false;
+                        }
+
                         recibir.pararRecibir();
                         bt.cerrarBT();
 
@@ -282,6 +293,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     mostrarToast(Toast.LENGTH_LONG, "Desconectado!");
                     conectar.setEnabled(true);
                     ACCESO_DENEGADO = false;
+                    verPuerta.cercaniaCollar();
                     desconectar.setEnabled(false);
                     tempVar.setText("");
                     puertaVar.setText("");
@@ -351,7 +363,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                            PUERTA_ABIERTA = true;
                        }
                        if(enviar.equals(PRENDER_LUZ)){
-                           modificarBoton("luz",getResources().getString(R.string.action_luz_down));
+                           LUZ_PRENDIDA = true;
                        }
                        //Espero a que se envie para que se cierre.
                        try {
@@ -386,15 +398,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return builder.create();
     }
 
-    public void modificarBoton(String boton,String valor){
 
-        if(boton.equals("puerta")){
-            puerta.setText(valor);
-        }else{
-            luces.setText(valor);
-        }
-
-    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
