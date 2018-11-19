@@ -25,8 +25,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
 
     ////Direccion de dispositivos
-    public static final String DIR_COLLAR = "00:21:13:00:83:8C";
-
+   // public static final String DIR_COLLAR = "00:21:13:00:83:8C";
+    public static final String DIR_COLLAR = "20:15:04:27:71:26";
     //// ESTADOS
     public static boolean PUERTA_ABIERTA = false;
     public static boolean LUZ_PRENDIDA = false;
@@ -87,11 +87,39 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             @Override
             public void handleMessage(Message msg) {
                 Bundle mensaje = msg.getData();
-                Log.d("Mensaje:", mensaje.getString("temp"));
-                puertaVar.setText(mensaje.getString("temp"));
-                tempVar.setText(mensaje.getString("puerta"));
-                if(PUERTA_ABIERTA) //falta evaluar la variable.
+                String puertaTemp =mensaje.getString("puerta");
+                String estadoCollar = mensaje.getString("est");
+                String temperatura = mensaje.getString("temp");
+                String estadoTemp = mensaje.getString("alarmaTemp");
+                String lucesTemp = mensaje.getString("luz");
+
+
+
+                puertaVar.setText(puertaTemp.equals("0")?"CERRADA":"ABIERTA");
+                tempVar.setText(temperatura);
+
+               if(puertaTemp != null)
+                if((PUERTA_ABIERTA || puertaTemp.equals("1")) && puerta.getText().equals(getResources().getString(R.string.action_puerta_open))) //falta evaluar la variable.
                     puerta.setText(getResources().getString(R.string.action_puerta_close));
+
+               if(estadoCollar != null)
+                if(estadoCollar.equals("1"))
+                    mostrarToast(Toast.LENGTH_LONG,"Collar Desprendido!!!");
+
+               if(estadoTemp != null)
+                if(estadoTemp.equals("2")||estadoTemp.equals("1"))
+                    mostrarToast(Toast.LENGTH_LONG,estadoTemp.equals("2")?"Tu perro tiene calor!!!":"Tu perro tiene frio!!!!");
+
+                if(lucesTemp != null){
+                    if(lucesTemp.equals("1") && luces.getText().equals(getResources().getString(R.string.action_luz_up))){
+                        luces.setText(getResources().getString(R.string.action_luz_down));
+                    }else{
+                        if(lucesTemp.equals("0") && luces.getText().equals(getResources().getString(R.string.action_luz_down)))
+                            luces.setText(getResources().getString(R.string.action_luz_up));
+                    }
+                }
+
+
                 removeMessages(0);
             }
         };
@@ -282,10 +310,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         }
                         if(LUZ_PRENDIDA){
                             bt.enviar(APAGAR_LUZ);
-                            luces.setText(getResources().getString(R.string.action_luz_down));
+                            luces.setText(getResources().getString(R.string.action_luz_up));
                             LUZ_PRENDIDA = false;
                         }
-
+                        //Espero a que se terminen de enviar.
+                        try {
+                            Thread.sleep(2000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                         recibir.pararRecibir();
                         bt.cerrarBT();
 
@@ -341,8 +374,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
            new Thread(new Runnable() {
                @Override
                public void run() {
+                boolean conDesconexion = false;
 
-                   bt.conectar(DIR_COLLAR);
+                   if(!bt.isConnected())
+                     conDesconexion = true;
+
                    while(!bt.isConnected())
                    {
                        try {
@@ -371,7 +407,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                        } catch (InterruptedException e) {
                            e.printStackTrace();
                        }
-                       bt.cerrarBT();
+                       if(conDesconexion)
+                           bt.cerrarBT();
                    }else{
                        Log.d("INFO","NO SE MANDA INFO");
                    }
@@ -380,7 +417,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                }
            }).start();
                 dialog.dismiss();
-                mostrarToast(Toast.LENGTH_SHORT, enviar + "!");
+                mostrarToast(Toast.LENGTH_LONG, "Enviando solicitud!!");
             }
         });
 

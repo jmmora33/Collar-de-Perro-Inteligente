@@ -44,12 +44,21 @@ public class RecibirInformacion{
                      }
                      valores = cadena.split(",");
                      Log.d("CADENA ", cadena);
-                     if (valores.length >= 3) {
+                     if (valores.length >= 7) {
                          info.putString("puerta", valores[1]);
                          info.putString("temp", valores[2]);
+                         info.putString("luz",valores[3]);//1= encendida 0 = apagada
+                         info.putString("est",valores[4]); //Estado del collar 1=Desprendido 0= ok.
+                         info.putString("ladr",valores[5]);
+                         info.putString("alarmaTemp",valores[6]);
+
                      } else {
                          info.putString("puerta", "SIN DATO");
                          info.putString("temp", "0");
+                         info.putString("luz","SIN DATO");
+                         info.putString("est","SIN DATO");
+                         info.putString("ladr","SIN DATO");
+                         info.putString("alarma","SIN DATO");
                      }
 
 
