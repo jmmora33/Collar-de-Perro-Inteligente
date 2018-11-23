@@ -29,7 +29,11 @@ public class RecibirInformacion{
      new Thread(new Runnable() {
          @Override
          public void run() {
-             ejecutar = true;
+
+             synchronized (this){
+              ejecutar = true;
+             }
+
              valores = new String[CANT_INFO];
              while(ejecutar) {
                  Message mensaje = new Message();
@@ -72,7 +76,10 @@ public class RecibirInformacion{
     }
 
     public  void pararRecibir(){
-       ejecutar = false;
+
+        synchronized (this){
+            ejecutar = false;
+        }
     }
 
     public void cercaniaCollar(){

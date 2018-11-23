@@ -31,11 +31,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public static boolean PUERTA_ABIERTA = false;
     public static boolean LUZ_PRENDIDA = false;
     public static boolean ACCESO_DENEGADO = false;
+    public static int NOTIFICACION = 10;
 
     //// Sensores
     private SensorManager sensorManager;
-    private static final int UMBRAL_LUZ = 10;
-    private static final int SHAKE = 15;
+    private static final int UMBRAL_LUZ = 5;
+    private static final int SHAKE = 12;
     private int contador_iluminancia;
 
     //// Layout
@@ -66,7 +67,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     //DIALOG
     private AlertDialog dialog;
-
+    private int cantidadDeAvisos;
 
     // Inicializa y asocia los campos y botones
 
@@ -102,13 +103,29 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 if((PUERTA_ABIERTA || puertaTemp.equals("1")) && puerta.getText().equals(getResources().getString(R.string.action_puerta_open))) //falta evaluar la variable.
                     puerta.setText(getResources().getString(R.string.action_puerta_close));
 
-               if(estadoCollar != null)
-                if(estadoCollar.equals("1"))
-                    mostrarToast(Toast.LENGTH_LONG,"Collar Desprendido!!!");
+               if(estadoCollar != null){
+                   if(estadoCollar.equals("1")){
+                       if(cantidadDeAvisos >= NOTIFICACION){
+                           mostrarToast(Toast.LENGTH_SHORT,"Collar Desprendido!!!");
+                           cantidadDeAvisos = 0;
+                       }else{
+                           cantidadDeAvisos++;
+                       }
 
-               if(estadoTemp != null)
-                if(estadoTemp.equals("2")||estadoTemp.equals("1"))
-                    mostrarToast(Toast.LENGTH_LONG,estadoTemp.equals("2")?"Tu perro tiene calor!!!":"Tu perro tiene frio!!!!");
+                   }
+
+               }
+
+               if(estadoTemp != null){
+                   if(estadoTemp.equals("2")||estadoTemp.equals("1")){
+                       if(cantidadDeAvisos >= NOTIFICACION){
+                           mostrarToast(Toast.LENGTH_SHORT,estadoTemp.equals("2")?"Tu perro tiene calor!!!":"Tu perro tiene frio!!!!");
+                           cantidadDeAvisos = 0;
+                       }else{
+                           cantidadDeAvisos++;
+                       }
+                   }
+               }
 
                 if(lucesTemp != null){
                     if(lucesTemp.equals("1") && luces.getText().equals(getResources().getString(R.string.action_luz_up))){
@@ -148,10 +165,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     if (event.values[0] < event.sensor.getMaximumRange())
 
                         if (bt == null || !bt.isConnected()) {
-                            mostrarToast(Toast.LENGTH_LONG, getResources().getString(R.string.no_conection));
+                            mostrarToast(Toast.LENGTH_SHORT, getResources().getString(R.string.no_conection));
                         } else {
                             bt.enviar(BUZZER);
-                            mostrarToast(Toast.LENGTH_LONG, "Alarma!");
+                            mostrarToast(Toast.LENGTH_SHORT, "Alarma!");
                         }
                     //HAcer sonar el buzzer (que sean segundos)
                     break;
@@ -159,10 +176,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     if (Math.abs(event.values[0]) > SHAKE || Math.abs(event.values[1]) > SHAKE || Math.abs(event.values[2]) > SHAKE) {
                         Log.d("Sensor", "Hubo un shake madafaca, prendiendo ultrasonido");
                         if (bt == null || !bt.isConnected()) {
-                            mostrarToast(Toast.LENGTH_LONG, getResources().getString(R.string.no_conection));
+                            mostrarToast(Toast.LENGTH_SHORT, getResources().getString(R.string.no_conection));
                         } else {
                             bt.enviar(ULTRASONIDO);
-                            mostrarToast(Toast.LENGTH_LONG, getResources().getString(R.string.action_shake));
+                            mostrarToast(Toast.LENGTH_SHORT, getResources().getString(R.string.action_shake));
                         }
                     }
                     break;
