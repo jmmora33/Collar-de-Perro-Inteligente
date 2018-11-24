@@ -25,8 +25,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
 
     ////Direccion de dispositivos
-   // public static final String DIR_COLLAR = "00:21:13:00:83:8C";
-    public static final String DIR_COLLAR = "20:15:04:27:71:26";
+    public static final String DIR_COLLAR = "00:21:13:00:83:8C";
+    //public static final String DIR_COLLAR = "20:15:04:27:71:26";
     //// ESTADOS
     public static boolean PUERTA_ABIERTA = false;
     public static boolean LUZ_PRENDIDA = false;
