@@ -25,13 +25,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
 
     ////Direccion de dispositivos
-    public static final String DIR_COLLAR = "00:21:13:00:83:8C";
-    //public static final String DIR_COLLAR = "20:15:04:27:71:26";
+    //public static final String DIR_COLLAR = "00:21:13:00:83:8C";
+    public static final String DIR_COLLAR = "20:15:04:27:71:26";
     //// ESTADOS
     public static boolean PUERTA_ABIERTA = false;
     public static boolean LUZ_PRENDIDA = false;
     public static boolean ACCESO_DENEGADO = false;
-    public static int NOTIFICACION = 10;
+    public static int NOTIFICACION = 3;
 
     //// Sensores
     private SensorManager sensorManager;
@@ -93,7 +93,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 String temperatura = mensaje.getString("temp");
                 String estadoTemp = mensaje.getString("alarmaTemp");
                 String lucesTemp = mensaje.getString("luz");
-
+                String ladrido = mensaje.getString("ladr");
 
 
                 puertaVar.setText(puertaTemp.equals("0")?"CERRADA":"ABIERTA");
@@ -103,18 +103,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 if((PUERTA_ABIERTA || puertaTemp.equals("1")) && puerta.getText().equals(getResources().getString(R.string.action_puerta_open))) //falta evaluar la variable.
                     puerta.setText(getResources().getString(R.string.action_puerta_close));
 
-               if(estadoCollar != null){
-                   if(estadoCollar.equals("1")){
-                       if(cantidadDeAvisos >= NOTIFICACION){
-                           mostrarToast(Toast.LENGTH_SHORT,"Collar Desprendido!!!");
-                           cantidadDeAvisos = 0;
-                       }else{
-                           cantidadDeAvisos++;
-                       }
+                if(lucesTemp != null){
+                    if(lucesTemp.equals("1") && luces.getText().equals(getResources().getString(R.string.action_luz_up))){
+                        luces.setText(getResources().getString(R.string.action_luz_down));
+                    }else{
+                        if(lucesTemp.equals("0") && luces.getText().equals(getResources().getString(R.string.action_luz_down)))
+                            luces.setText(getResources().getString(R.string.action_luz_up));
+                    }
+                }
 
-                   }
+               if(ladrido != null && ladrido.equals("1"))
+                   mostrarToast(Toast.LENGTH_SHORT,"Esta ladrando!!");
 
-               }
+
+                if(estadoCollar != null && estadoCollar.equals("1"))
+                    mostrarToast(Toast.LENGTH_SHORT,"Collar Desprendido!!!");
 
                if(estadoTemp != null){
                    if(estadoTemp.equals("2")||estadoTemp.equals("1")){
@@ -127,14 +130,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                    }
                }
 
-                if(lucesTemp != null){
-                    if(lucesTemp.equals("1") && luces.getText().equals(getResources().getString(R.string.action_luz_up))){
-                        luces.setText(getResources().getString(R.string.action_luz_down));
-                    }else{
-                        if(lucesTemp.equals("0") && luces.getText().equals(getResources().getString(R.string.action_luz_down)))
-                            luces.setText(getResources().getString(R.string.action_luz_up));
-                    }
-                }
+
 
 
                 removeMessages(0);
